@@ -55,7 +55,7 @@ class _ElegantSidebarState extends State<ElegantSidebar>
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -102,7 +102,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               size: 20,
             ),
             style: IconButton.styleFrom(
-              foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF374151),
+              foregroundColor: isDark
+                  ? const Color(0xFFCCCCCC)
+                  : const Color(0xFF374151),
               minimumSize: const Size(36, 36),
               padding: EdgeInsets.zero,
             ),
@@ -116,7 +118,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
-                  color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                  color: isDark
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xFF6B7280),
                 ),
               ),
             ),
@@ -124,7 +128,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               onPressed: () => _createNewFolder(),
               icon: const Icon(Icons.create_new_folder, size: 16),
               style: IconButton.styleFrom(
-                foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                foregroundColor: isDark
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xFF6B7280),
                 minimumSize: const Size(28, 28),
                 padding: EdgeInsets.zero,
               ),
@@ -134,7 +140,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               onPressed: () => _createNewNote(),
               icon: const Icon(Icons.note_add, size: 16),
               style: IconButton.styleFrom(
-                foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                foregroundColor: isDark
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xFF6B7280),
                 minimumSize: const Size(28, 28),
                 padding: EdgeInsets.zero,
               ),
@@ -193,12 +201,16 @@ class _ElegantSidebarState extends State<ElegantSidebar>
       builder: (context, folderProvider, noteProvider, child) {
         final folders = folderProvider.folders;
         final notes = noteProvider.notes;
-        
+
         return ListView(
           padding: const EdgeInsets.symmetric(vertical: 4),
           children: [
-            ...folders.map((folder) => _buildFolderTile(folder, noteProvider, isDark)),
-            ..._getRootNotes(notes).map((note) => _buildNoteTile(note, noteProvider, isDark, 0)),
+            ...folders.map(
+              (folder) => _buildFolderTile(folder, noteProvider, isDark),
+            ),
+            ..._getRootNotes(
+              notes,
+            ).map((note) => _buildNoteTile(note, noteProvider, isDark, 0)),
           ],
         );
       },
@@ -217,7 +229,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                 onPressed: () => _createNewFolder(),
                 icon: const Icon(Icons.folder, size: 20),
                 style: IconButton.styleFrom(
-                  foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                  foregroundColor: isDark
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xFF6B7280),
                   minimumSize: const Size(36, 36),
                 ),
               ),
@@ -229,7 +243,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                 onPressed: () => _createNewNote(),
                 icon: const Icon(Icons.note, size: 20),
                 style: IconButton.styleFrom(
-                  foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                  foregroundColor: isDark
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xFF6B7280),
                   minimumSize: const Size(36, 36),
                 ),
               ),
@@ -240,13 +256,20 @@ class _ElegantSidebarState extends State<ElegantSidebar>
     );
   }
 
-  Widget _buildFolderTile(Folder folder, NoteProvider noteProvider, bool isDark) {
-    if (_searchQuery.isNotEmpty && !folder.name.toLowerCase().contains(_searchQuery)) {
+  Widget _buildFolderTile(
+    Folder folder,
+    NoteProvider noteProvider,
+    bool isDark,
+  ) {
+    if (_searchQuery.isNotEmpty &&
+        !folder.name.toLowerCase().contains(_searchQuery)) {
       return const SizedBox.shrink();
     }
 
     final isExpanded = _expandedFolders.contains(folder.id);
-    final folderNotes = noteProvider.notes.where((note) => note.folderId == folder.id).toList();
+    final folderNotes = noteProvider.notes
+        .where((note) => note.folderId == folder.id)
+        .toList();
 
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) {
@@ -257,13 +280,16 @@ class _ElegantSidebarState extends State<ElegantSidebar>
         } else if (data['type'] == 'folder') {
           final folderId = data['id'] as String;
           if (folderId != folder.id) {
-            context.read<FolderProvider>().updateFolder(folderId, parentId: folder.id);
+            context.read<FolderProvider>().updateFolder(
+              folderId,
+              parentId: folder.id,
+            );
           }
         }
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -274,7 +300,10 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                 child: Container(
                   width: 200,
                   height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: folder.color.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(8),
@@ -308,9 +337,13 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: isHovering ? folder.color.withOpacity(0.1) : Colors.transparent,
+                  color: isHovering
+                      ? folder.color.withOpacity(0.1)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: isHovering ? Border.all(color: folder.color, width: 2) : null,
+                  border: isHovering
+                      ? Border.all(color: folder.color, width: 2)
+                      : null,
                 ),
                 child: InkWell(
                   onTap: () {
@@ -324,25 +357,35 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
                         Icon(
-                          isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                          isExpanded
+                              ? Icons.keyboard_arrow_down
+                              : Icons.keyboard_arrow_right,
                           size: 18,
-                          color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+                          color: isDark
+                              ? const Color(0xFFCCCCCC)
+                              : const Color(0xFF6B7280),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          width: 24,
-                          height: 24,
+                          width: 28,
+                          height: 28,
                           decoration: BoxDecoration(
                             color: folder.color.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Center(
-                            child: Text(folder.emoji, style: const TextStyle(fontSize: 14)),
+                            child: Text(
+                              folder.emoji,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -351,7 +394,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                             folder.name,
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF374151),
+                              color: isDark
+                                  ? const Color(0xFFCCCCCC)
+                                  : const Color(0xFF374151),
                               fontWeight: FontWeight.w500,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -359,7 +404,10 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                         ),
                         if (folderNotes.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: folder.color.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(10),
@@ -378,7 +426,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                           icon: Icon(
                             Icons.more_horiz,
                             size: 16,
-                            color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                            color: isDark
+                                ? const Color(0xFF6A6A6A)
+                                : const Color(0xFF9CA3AF),
                           ),
                           itemBuilder: (context) => [
                             const PopupMenuItem(
@@ -395,14 +445,22 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                               value: 'delete',
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete, size: 16, color: Colors.red),
+                                  Icon(
+                                    Icons.delete,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
                                   SizedBox(width: 8),
-                                  Text('Delete', style: TextStyle(color: Colors.red)),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
-                          onSelected: (value) => _handleFolderAction(folder, value),
+                          onSelected: (value) =>
+                              _handleFolderAction(folder, value),
                         ),
                       ],
                     ),
@@ -411,15 +469,23 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               ),
             ),
             if (isExpanded)
-              ...folderNotes.map((note) => _buildNoteTile(note, noteProvider, isDark, 1)),
+              ...folderNotes.map(
+                (note) => _buildNoteTile(note, noteProvider, isDark, 1),
+              ),
           ],
         );
       },
     );
   }
 
-  Widget _buildNoteTile(Note note, NoteProvider noteProvider, bool isDark, int level) {
-    if (_searchQuery.isNotEmpty && !note.title.toLowerCase().contains(_searchQuery)) {
+  Widget _buildNoteTile(
+    Note note,
+    NoteProvider noteProvider,
+    bool isDark,
+    int level,
+  ) {
+    if (_searchQuery.isNotEmpty &&
+        !note.title.toLowerCase().contains(_searchQuery)) {
       return const SizedBox.shrink();
     }
 
@@ -449,7 +515,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               Icon(
                 Icons.description,
                 size: 16,
-                color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                color: isDark
+                    ? const Color(0xFF6A6A6A)
+                    : const Color(0xFF9CA3AF),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -479,13 +547,15 @@ class _ElegantSidebarState extends State<ElegantSidebar>
             bottom: 8,
           ),
           decoration: BoxDecoration(
-            color: isSelected 
+            color: isSelected
                 ? (isDark ? const Color(0xFF2D2D30) : const Color(0xFFE5F3FF))
                 : null,
             borderRadius: BorderRadius.circular(6),
-            border: isSelected 
+            border: isSelected
                 ? Border.all(
-                    color: isDark ? const Color(0xFF007ACC) : const Color(0xFF3B82F6),
+                    color: isDark
+                        ? const Color(0xFF007ACC)
+                        : const Color(0xFF3B82F6),
                     width: 1,
                   )
                 : null,
@@ -493,18 +563,20 @@ class _ElegantSidebarState extends State<ElegantSidebar>
           child: Row(
             children: [
               Container(
-                width: 20,
-                height: 20,
+                width: 24,
+                height: 24,
                 decoration: BoxDecoration(
-                  color: isDark 
+                  color: isDark
                       ? const Color(0xFF6A6A6A).withOpacity(0.3)
                       : const Color(0xFF9CA3AF).withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   Icons.description,
-                  size: 12,
-                  color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                  size: 14,
+                  color: isDark
+                      ? const Color(0xFF6A6A6A)
+                      : const Color(0xFF9CA3AF),
                 ),
               ),
               const SizedBox(width: 8),
@@ -513,9 +585,11 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                   note.title.isEmpty ? 'Untitled' : note.title,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isSelected 
+                    color: isSelected
                         ? (isDark ? Colors.white : const Color(0xFF1F2937))
-                        : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF374151)),
+                        : (isDark
+                              ? const Color(0xFFCCCCCC)
+                              : const Color(0xFF374151)),
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -527,21 +601,30 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                   child: Icon(
                     Icons.push_pin,
                     size: 12,
-                    color: isDark ? const Color(0xFFFFB020) : const Color(0xFFF59E0B),
+                    color: isDark
+                        ? const Color(0xFFFFB020)
+                        : const Color(0xFFF59E0B),
                   ),
                 ),
               PopupMenuButton<String>(
                 icon: Icon(
                   Icons.more_horiz,
                   size: 14,
-                  color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                  color: isDark
+                      ? const Color(0xFF6A6A6A)
+                      : const Color(0xFF9CA3AF),
                 ),
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'pin',
                     child: Row(
                       children: [
-                        Icon(note.isPinned ? Icons.push_pin : Icons.push_pin_outlined, size: 16),
+                        Icon(
+                          note.isPinned
+                              ? Icons.push_pin
+                              : Icons.push_pin_outlined,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Text(note.isPinned ? 'Unpin' : 'Pin'),
                       ],
@@ -578,7 +661,8 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                     ),
                   ),
                 ],
-                onSelected: (value) => _handleNoteAction(note, value, noteProvider),
+                onSelected: (value) =>
+                    _handleNoteAction(note, value, noteProvider),
               ),
             ],
           ),
@@ -610,7 +694,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
                   '$noteCount notes',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                    color: isDark
+                        ? const Color(0xFF6A6A6A)
+                        : const Color(0xFF9CA3AF),
                   ),
                 );
               },
@@ -619,11 +705,15 @@ class _ElegantSidebarState extends State<ElegantSidebar>
           IconButton(
             onPressed: () => context.read<ThemeProvider>().toggleTheme(),
             icon: Icon(
-              context.watch<ThemeProvider>().isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              context.watch<ThemeProvider>().isDarkMode
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
               size: 16,
             ),
             style: IconButton.styleFrom(
-              foregroundColor: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+              foregroundColor: isDark
+                  ? const Color(0xFF6A6A6A)
+                  : const Color(0xFF9CA3AF),
               minimumSize: const Size(28, 28),
               padding: EdgeInsets.zero,
             ),
@@ -635,7 +725,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
   }
 
   List<Note> _getRootNotes(List<Note> notes) {
-    return notes.where((note) => note.folderId.isEmpty || note.folderId == 'default').toList();
+    return notes
+        .where((note) => note.folderId.isEmpty || note.folderId == 'default')
+        .toList();
   }
 
   void _createNewFolder() {
@@ -648,7 +740,7 @@ class _ElegantSidebarState extends State<ElegantSidebar>
   void _createNewNote() {
     final folderProvider = context.read<FolderProvider>();
     final noteProvider = context.read<NoteProvider>();
-    
+
     noteProvider.createNote(
       title: 'Untitled',
       content: '',
@@ -725,7 +817,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Note'),
-        content: Text('Are you sure you want to delete "${note.title.isEmpty ? 'Untitled' : note.title}"?'),
+        content: Text(
+          'Are you sure you want to delete "${note.title.isEmpty ? 'Untitled' : note.title}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

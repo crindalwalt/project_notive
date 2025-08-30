@@ -26,18 +26,63 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
   late TextEditingController _nameController;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  
+
   String _selectedEmoji = '📁';
   Color _selectedColor = const Color(0xFF007ACC);
-  
+
   final List<String> _popularEmojis = [
-    '📁', '📂', '🗂️', '📋', '📊', '📈', '📉', '📝', '✍️', '📄',
-    '📑', '📚', '📖', '📕', '📗', '📘', '📙', '🔖', '🏷️', '📎',
-    '🔗', '📌', '📍', '🎯', '💡', '⭐', '🔥', '❤️', '💼', '🏠',
-    '⚡', '🌟', '🚀', '🎨', '🎭', '🎪', '🎵', '🎤', '🎧', '📺',
-    '💻', '⌨️', '🖥️', '📱', '⌚', '🔧', '⚙️', '🛠️', '🔨', '⚔️'
+    '📁',
+    '📂',
+    '🗂️',
+    '📋',
+    '📊',
+    '📈',
+    '📉',
+    '📝',
+    '✍️',
+    '📄',
+    '📑',
+    '📚',
+    '📖',
+    '📕',
+    '📗',
+    '📘',
+    '📙',
+    '🔖',
+    '🏷️',
+    '📎',
+    '🔗',
+    '📌',
+    '📍',
+    '🎯',
+    '💡',
+    '⭐',
+    '🔥',
+    '❤️',
+    '💼',
+    '🏠',
+    '⚡',
+    '🌟',
+    '🚀',
+    '🎨',
+    '🎭',
+    '🎪',
+    '🎵',
+    '🎤',
+    '🎧',
+    '📺',
+    '💻',
+    '⌨️',
+    '🖥️',
+    '📱',
+    '⌚',
+    '🔧',
+    '⚙️',
+    '🛠️',
+    '🔨',
+    '⚔️',
   ];
-  
+
   final List<Color> _popularColors = [
     const Color(0xFF007ACC), // Blue
     const Color(0xFF10B981), // Green
@@ -59,20 +104,16 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _selectedEmoji = widget.initialEmoji ?? '📁';
     _selectedColor = widget.initialColor ?? const Color(0xFF007ACC);
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
-    
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
+
     _animationController.forward();
   }
 
@@ -87,14 +128,12 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final isEditing = widget.folderId != null;
-    
+
     return ScaleTransition(
       scale: _scaleAnimation,
       child: AlertDialog(
         backgroundColor: isDark ? const Color(0xFF252526) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Container(
@@ -117,7 +156,9 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF1F2937),
+                color: isDark
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xFF1F2937),
               ),
             ),
           ],
@@ -142,7 +183,9 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
             child: Text(
               'Cancel',
               style: TextStyle(
-                color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                color: isDark
+                    ? const Color(0xFF6A6A6A)
+                    : const Color(0xFF9CA3AF),
               ),
             ),
           ),
@@ -188,7 +231,9 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
               color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
             ),
             filled: true,
-            fillColor: isDark ? const Color(0xFF2D2D30) : const Color(0xFFF3F4F6),
+            fillColor: isDark
+                ? const Color(0xFF2D2D30)
+                : const Color(0xFFF3F4F6),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -237,7 +282,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
             itemBuilder: (context, index) {
               final emoji = _popularEmojis[index];
               final isSelected = emoji == _selectedEmoji;
-              
+
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -248,15 +293,12 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
                   decoration: BoxDecoration(
                     color: isSelected ? _selectedColor.withOpacity(0.2) : null,
                     borderRadius: BorderRadius.circular(6),
-                    border: isSelected 
+                    border: isSelected
                         ? Border.all(color: _selectedColor, width: 2)
                         : null,
                   ),
                   child: Center(
-                    child: Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 18)),
                   ),
                 ),
               );
@@ -285,7 +327,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
           runSpacing: 8,
           children: _popularColors.map((color) {
             final isSelected = color.value == _selectedColor.value;
-            
+
             return GestureDetector(
               onTap: () {
                 setState(() {
@@ -298,7 +340,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(8),
-                  border: isSelected 
+                  border: isSelected
                       ? Border.all(
                           color: isDark ? Colors.white : Colors.black,
                           width: 3,
@@ -306,11 +348,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
                       : null,
                 ),
                 child: isSelected
-                    ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 20,
-                      )
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
                     : null,
               ),
             );
@@ -325,7 +363,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
     if (name.isEmpty) return;
 
     final folderProvider = context.read<FolderProvider>();
-    
+
     if (widget.folderId != null) {
       // Update existing folder
       folderProvider.updateFolder(
@@ -342,7 +380,7 @@ class _CreateFolderDialogState extends State<CreateFolderDialog>
         color: _selectedColor,
       );
     }
-    
+
     Navigator.pop(context);
   }
 }
