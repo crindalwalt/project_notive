@@ -52,9 +52,41 @@ class FolderProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateFolder(String id, {String? name, String? parentId}) async {
+  Future<void> createFolderWithStyle(
+    String name, {
+    String? parentId,
+    String emoji = '📁',
+    Color color = const Color(0xFF007ACC),
+  }) async {
     try {
-      await _repository.updateFolder(id, name: name, parentId: parentId);
+      await _repository.createFolderWithStyle(
+        name,
+        parentId: parentId,
+        emoji: emoji,
+        color: color,
+      );
+      await loadFolders();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateFolder(
+    String id, {
+    String? name,
+    String? parentId,
+    String? emoji,
+    Color? color,
+  }) async {
+    try {
+      await _repository.updateFolder(
+        id,
+        name: name,
+        parentId: parentId,
+        emoji: emoji,
+        color: color,
+      );
       await loadFolders();
     } catch (e) {
       _error = e.toString();

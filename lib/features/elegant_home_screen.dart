@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/note_provider.dart';
 import '../providers/folder_provider.dart';
-import '../widgets/common/elegant_sidebar.dart';
+import '../widgets/common/elegant_sidebar_new.dart';
 import '../widgets/common/elegant_note_editor.dart';
 
 class ElegantHomeScreen extends StatefulWidget {
