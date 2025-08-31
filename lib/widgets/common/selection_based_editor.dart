@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 import '../../providers/note_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/note.dart';
 
-class WordStyleEditor extends StatefulWidget {
-  const WordStyleEditor({super.key});
+class SelectionBasedRichTextEditor extends StatefulWidget {
+  const SelectionBasedRichTextEditor({super.key});
 
   @override
-  State<WordStyleEditor> createState() => _WordStyleEditorState();
+  State<SelectionBasedRichTextEditor> createState() =>
+      _SelectionBasedRichTextEditorState();
 }
 
-class _WordStyleEditorState extends State<WordStyleEditor> {
+class _SelectionBasedRichTextEditorState
+    extends State<SelectionBasedRichTextEditor> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late FocusNode _titleFocusNode;
@@ -19,7 +22,10 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
   Note? _currentNote;
   bool _isModified = false;
 
-  // Rich text formatting state
+  // Rich text formatting data
+  List<TextSpanData> _formattedSpans = [];
+
+  // Current toolbar state
   bool _isBold = false;
   bool _isItalic = false;
   bool _isUnderline = false;
@@ -69,6 +75,7 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
 
     _titleController.addListener(_onTitleChanged);
     _contentController.addListener(_onContentChanged);
+    _contentController.addListener(_updateToolbarState);
   }
 
   @override
@@ -90,13 +97,69 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (note != null) {
           _titleController.text = note.title;
-          _contentController.text = note.content;
+
+          // Load formatted content
+          try {
+            if (note.content.isNotEmpty) {
+              final Map<String, dynamic> contentData = jsonDecode(note.content);
+              if (contentData.containsKey('text') &&
+                  contentData.containsKey('spans')) {
+                _contentController.text = contentData['text'];
+                _formattedSpans = (contentData['spans'] as List)
+                    .map((span) => TextSpanData.fromJson(span))
+                    .toList();
+              } else {
+                // Legacy plain text
+                _contentController.text = note.content;
+                _formattedSpans = [];
+              }
+            } else {
+              _contentController.clear();
+              _formattedSpans = [];
+            }
+          } catch (e) {
+            // If content is not valid JSON, treat as plain text
+            _contentController.text = note.content;
+            _formattedSpans = [];
+          }
         } else {
           _titleController.clear();
           _contentController.clear();
+          _formattedSpans = [];
         }
       });
     }
+  }
+
+  void _updateToolbarState() {
+    final selection = _contentController.selection;
+    if (selection.isValid && selection.start == selection.end) {
+      // Cursor position - check format at cursor
+      final spanAtCursor = _getSpanAtPosition(selection.start);
+      if (spanAtCursor != null) {
+        setState(() {
+          _isBold = spanAtCursor.isBold;
+          _isItalic = spanAtCursor.isItalic;
+          _isUnderline = spanAtCursor.isUnderline;
+          _isStrikethrough = spanAtCursor.isStrikethrough;
+          _fontSize = spanAtCursor.fontSize;
+          _fontFamily = spanAtCursor.fontFamily;
+          _textColor = spanAtCursor.color;
+          _backgroundColor = spanAtCursor.backgroundColor;
+        });
+      }
+    }
+  }
+
+  TextSpanData? _getSpanAtPosition(int position) {
+    int currentPos = 0;
+    for (final span in _formattedSpans) {
+      if (position >= currentPos && position < currentPos + span.text.length) {
+        return span;
+      }
+      currentPos += span.text.length;
+    }
+    return null;
   }
 
   void _onTitleChanged() {
@@ -113,20 +176,208 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
         _isModified = true;
       });
     }
+
+    // If we have no formatted spans and user started typing, create initial span
+    if (_formattedSpans.isEmpty && _contentController.text.isNotEmpty) {
+      setState(() {
+        _formattedSpans = [
+          TextSpanData(
+            text: _contentController.text,
+            fontSize: _fontSize,
+            fontFamily: _fontFamily,
+            color: _textColor,
+            backgroundColor: _backgroundColor,
+          ),
+        ];
+      });
+    }
+
+    // Sync text changes with spans
+    if (_formattedSpans.isNotEmpty) {
+      final currentText = _formattedSpans.map((span) => span.text).join();
+      if (currentText != _contentController.text) {
+        // Text was modified, update spans accordingly
+        final newText = _contentController.text;
+        if (newText.length > currentText.length) {
+          // Text was added
+          final addedText = newText.substring(currentText.length);
+          setState(() {
+            _formattedSpans.add(
+              TextSpanData(
+                text: addedText,
+                fontSize: _fontSize,
+                fontFamily: _fontFamily,
+                color: _textColor,
+                backgroundColor: _backgroundColor,
+              ),
+            );
+          });
+        } else if (newText.length < currentText.length) {
+          // Text was removed - for now, recreate from plain text
+          setState(() {
+            _formattedSpans = newText.isEmpty
+                ? []
+                : [
+                    TextSpanData(
+                      text: newText,
+                      fontSize: _fontSize,
+                      fontFamily: _fontFamily,
+                      color: _textColor,
+                      backgroundColor: _backgroundColor,
+                    ),
+                  ];
+          });
+        }
+      }
+    }
   }
 
   void _saveNote() {
     if (_currentNote != null && _isModified) {
       final noteProvider = context.read<NoteProvider>();
+
+      // Save as structured format
+      final contentData = {
+        'text': _contentController.text,
+        'spans': _formattedSpans.map((span) => span.toJson()).toList(),
+      };
+
       noteProvider.updateNote(
         _currentNote!.id,
         title: _titleController.text.trim().isEmpty
             ? 'Untitled'
             : _titleController.text.trim(),
-        content: _contentController.text,
+        content: jsonEncode(contentData),
       );
       _isModified = false;
     }
+  }
+
+  void _applyFormatting({
+    bool? bold,
+    bool? italic,
+    bool? underline,
+    bool? strikethrough,
+    double? fontSize,
+    String? fontFamily,
+    Color? textColor,
+    Color? backgroundColor,
+  }) {
+    final selection = _contentController.selection;
+
+    if (!selection.isValid) {
+      _showSnackBar('Please place cursor in text or select text to format');
+      return;
+    }
+
+    if (selection.isCollapsed) {
+      _showSnackBar('Please select text to apply formatting');
+      return;
+    }
+
+    final start = selection.start;
+    final end = selection.end;
+    final selectedText = _contentController.text.substring(start, end);
+
+    // Create new span with selected formatting
+    final newSpan = TextSpanData(
+      text: selectedText,
+      isBold: bold ?? _isBold,
+      isItalic: italic ?? _isItalic,
+      isUnderline: underline ?? _isUnderline,
+      isStrikethrough: strikethrough ?? _isStrikethrough,
+      fontSize: fontSize ?? _fontSize,
+      fontFamily: fontFamily ?? _fontFamily,
+      color: textColor ?? _textColor,
+      backgroundColor: backgroundColor ?? _backgroundColor,
+    );
+
+    setState(() {
+      _replaceTextRange(start, end, newSpan);
+      _isModified = true;
+    });
+  }
+
+  void _replaceTextRange(int start, int end, TextSpanData newSpan) {
+    final newSpans = <TextSpanData>[];
+    int currentPos = 0;
+    bool spanAdded = false;
+
+    for (final span in _formattedSpans) {
+      final spanStart = currentPos;
+      final spanEnd = currentPos + span.text.length;
+
+      if (spanEnd <= start) {
+        // Span is completely before selection
+        newSpans.add(span);
+      } else if (spanStart >= end) {
+        // Span is completely after selection
+        if (!spanAdded) {
+          newSpans.add(newSpan);
+          spanAdded = true;
+        }
+        newSpans.add(span);
+      } else {
+        // Span overlaps with selection
+        if (spanStart < start) {
+          // Add part before selection
+          newSpans.add(
+            TextSpanData(
+              text: span.text.substring(0, start - spanStart),
+              isBold: span.isBold,
+              isItalic: span.isItalic,
+              isUnderline: span.isUnderline,
+              isStrikethrough: span.isStrikethrough,
+              fontSize: span.fontSize,
+              fontFamily: span.fontFamily,
+              color: span.color,
+              backgroundColor: span.backgroundColor,
+            ),
+          );
+        }
+
+        // Add new formatted span (only once)
+        if (!spanAdded) {
+          newSpans.add(newSpan);
+          spanAdded = true;
+        }
+
+        if (spanEnd > end) {
+          // Add part after selection
+          newSpans.add(
+            TextSpanData(
+              text: span.text.substring(end - spanStart),
+              isBold: span.isBold,
+              isItalic: span.isItalic,
+              isUnderline: span.isUnderline,
+              isStrikethrough: span.isStrikethrough,
+              fontSize: span.fontSize,
+              fontFamily: span.fontFamily,
+              color: span.color,
+              backgroundColor: span.backgroundColor,
+            ),
+          );
+        }
+      }
+      currentPos += span.text.length;
+    }
+
+    // If no spans exist or span wasn't added yet
+    if (!spanAdded) {
+      newSpans.add(newSpan);
+    }
+
+    _formattedSpans = newSpans;
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -364,6 +615,7 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
                     setState(() {
                       _fontFamily = value!;
                     });
+                    _applyFormatting(fontFamily: value);
                   },
                 ),
               ),
@@ -405,38 +657,51 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
                     setState(() {
                       _fontSize = value!;
                     });
+                    _applyFormatting(fontSize: value);
                   },
                 ),
               ),
             ),
             const SizedBox(width: 12),
 
-            // Formatting Buttons Row 1
+            // Formatting Buttons
             _buildToggleButton(
               Icons.format_bold,
               _isBold,
-              () => setState(() => _isBold = !_isBold),
+              () {
+                setState(() => _isBold = !_isBold);
+                _applyFormatting(bold: _isBold);
+              },
               'Bold',
               isDark,
             ),
             _buildToggleButton(
               Icons.format_italic,
               _isItalic,
-              () => setState(() => _isItalic = !_isItalic),
+              () {
+                setState(() => _isItalic = !_isItalic);
+                _applyFormatting(italic: _isItalic);
+              },
               'Italic',
               isDark,
             ),
             _buildToggleButton(
               Icons.format_underlined,
               _isUnderline,
-              () => setState(() => _isUnderline = !_isUnderline),
+              () {
+                setState(() => _isUnderline = !_isUnderline);
+                _applyFormatting(underline: _isUnderline);
+              },
               'Underline',
               isDark,
             ),
             _buildToggleButton(
               Icons.format_strikethrough,
               _isStrikethrough,
-              () => setState(() => _isStrikethrough = !_isStrikethrough),
+              () {
+                setState(() => _isStrikethrough = !_isStrikethrough);
+                _applyFormatting(strikethrough: _isStrikethrough);
+              },
               'Strikethrough',
               isDark,
             ),
@@ -487,88 +752,20 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
             ),
             const SizedBox(width: 8),
 
-            // List and Indent Buttons
-            _buildActionButton(
-              Icons.format_list_bulleted,
-              'Bullet List',
-              isDark,
-              () => _insertText('• '),
-            ),
-            _buildActionButton(
-              Icons.format_list_numbered,
-              'Numbered List',
-              isDark,
-              () => _insertText('1. '),
-            ),
-            _buildActionButton(
-              Icons.format_indent_decrease,
-              'Decrease Indent',
-              isDark,
-              () {},
-            ),
-            _buildActionButton(
-              Icons.format_indent_increase,
-              'Increase Indent',
-              isDark,
-              () => _insertText('    '),
-            ),
-
-            const SizedBox(width: 8),
-            Container(
-              width: 1,
-              height: 24,
-              color: isDark ? const Color(0xFF404040) : const Color(0xFFD1D5DB),
-            ),
-            const SizedBox(width: 8),
-
             // Color Buttons
             _buildColorButton(
               Icons.format_color_text,
               _textColor,
               'Text Color',
               isDark,
-              (color) => setState(() => _textColor = color),
+              (color) => _applyFormatting(textColor: color),
             ),
             _buildColorButton(
               Icons.format_color_fill,
               _backgroundColor,
               'Highlight Color',
               isDark,
-              (color) => setState(() => _backgroundColor = color),
-            ),
-
-            const SizedBox(width: 8),
-            Container(
-              width: 1,
-              height: 24,
-              color: isDark ? const Color(0xFF404040) : const Color(0xFFD1D5DB),
-            ),
-            const SizedBox(width: 8),
-
-            // Insert Elements
-            _buildActionButton(
-              Icons.table_chart,
-              'Insert Table',
-              isDark,
-              () => _insertTable(),
-            ),
-            _buildActionButton(
-              Icons.horizontal_rule,
-              'Insert Line',
-              isDark,
-              () => _insertText('\n---\n'),
-            ),
-            _buildActionButton(
-              Icons.code,
-              'Code Block',
-              isDark,
-              () => _insertText('```\n\n```'),
-            ),
-            _buildActionButton(
-              Icons.format_quote,
-              'Quote',
-              isDark,
-              () => _insertText('> '),
+              (color) => _applyFormatting(backgroundColor: color),
             ),
           ],
         ),
@@ -597,31 +794,6 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
             foregroundColor: isActive
                 ? (isDark ? Colors.white : const Color(0xFF3B82F6))
                 : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280)),
-            minimumSize: const Size(32, 32),
-            padding: const EdgeInsets.all(4),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    IconData icon,
-    String tooltip,
-    bool isDark,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(right: 2),
-      child: Tooltip(
-        message: tooltip,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 18),
-          style: IconButton.styleFrom(
-            foregroundColor: isDark
-                ? const Color(0xFFCCCCCC)
-                : const Color(0xFF6B7280),
             minimumSize: const Size(32, 32),
             padding: const EdgeInsets.all(4),
           ),
@@ -711,6 +883,13 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
             children: colors.map((color) {
               return GestureDetector(
                 onTap: () {
+                  setState(() {
+                    if (onColorChanged.toString().contains('textColor')) {
+                      _textColor = color;
+                    } else {
+                      _backgroundColor = color;
+                    }
+                  });
                   onColorChanged(color);
                   Navigator.pop(context);
                 },
@@ -789,41 +968,140 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
           ),
         ],
       ),
-      child: TextField(
-        controller: _contentController,
-        focusNode: _contentFocusNode,
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(
-          fontSize: _fontSize,
-          fontFamily: _fontFamily == 'System Default' ? null : _fontFamily,
-          fontWeight: _isBold ? FontWeight.bold : FontWeight.normal,
-          fontStyle: _isItalic ? FontStyle.italic : FontStyle.normal,
-          decoration: TextDecoration.combine([
-            if (_isUnderline) TextDecoration.underline,
-            if (_isStrikethrough) TextDecoration.lineThrough,
-          ]),
-          color: _textColor == Colors.transparent
-              ? (isDark ? Colors.white : Colors.black)
-              : _textColor,
-          backgroundColor: _backgroundColor == Colors.transparent
-              ? null
-              : _backgroundColor,
-          height: 1.6,
-        ),
-        textAlign: _textAlign,
-        decoration: InputDecoration(
-          hintText: 'Start writing your document...',
-          hintStyle: TextStyle(
-            fontSize: _fontSize,
-            color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+      child: _formattedSpans.isEmpty
+          ? TextField(
+              controller: _contentController,
+              focusNode: _contentFocusNode,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white : Colors.black,
+                height: 1.6,
+              ),
+              textAlign: _textAlign,
+              decoration: InputDecoration(
+                hintText:
+                    'Start writing your document...\n\nTip: Select text first, then apply formatting.',
+                hintStyle: TextStyle(
+                  fontSize: 16,
+                  color: isDark
+                      ? const Color(0xFF6A6A6A)
+                      : const Color(0xFF9CA3AF),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            )
+          : SingleChildScrollView(
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 400),
+                child: _buildRichText(isDark),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildRichText(bool isDark) {
+    if (_formattedSpans.isEmpty) {
+      return GestureDetector(
+        onTap: () => _contentFocusNode.requestFocus(),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            'Start writing your document...\n\nTip: Select text first, then apply formatting.',
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+              height: 1.6,
+            ),
           ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
         ),
+      );
+    }
+
+    List<InlineSpan> spans = [];
+    for (final spanData in _formattedSpans) {
+      spans.add(
+        TextSpan(
+          text: spanData.text,
+          style: TextStyle(
+            fontSize: spanData.fontSize,
+            fontWeight: spanData.isBold ? FontWeight.bold : FontWeight.normal,
+            fontStyle: spanData.isItalic ? FontStyle.italic : FontStyle.normal,
+            decoration: _buildTextDecoration(spanData),
+            color: spanData.color == Colors.transparent
+                ? (isDark ? Colors.white : Colors.black)
+                : spanData.color,
+            backgroundColor: spanData.backgroundColor == Colors.transparent
+                ? null
+                : spanData.backgroundColor,
+            fontFamily: spanData.fontFamily == 'System Default'
+                ? null
+                : spanData.fontFamily,
+            height: 1.6,
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Focus the hidden text field for editing
+        _contentFocusNode.requestFocus();
+      },
+      child: Stack(
+        children: [
+          // Visible rich text
+          SelectableText.rich(
+            TextSpan(children: spans),
+            textAlign: _textAlign,
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? Colors.white : Colors.black,
+              height: 1.6,
+            ),
+          ),
+          // Hidden text field for text input
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.0,
+              child: TextField(
+                controller: _contentController,
+                focusNode: _contentFocusNode,
+                maxLines: null,
+                style: const TextStyle(color: Colors.transparent),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  TextDecoration _buildTextDecoration(TextSpanData spanData) {
+    List<TextDecoration> decorations = [];
+
+    if (spanData.isUnderline) {
+      decorations.add(TextDecoration.underline);
+    }
+    if (spanData.isStrikethrough) {
+      decorations.add(TextDecoration.lineThrough);
+    }
+
+    if (decorations.isEmpty) {
+      return TextDecoration.none;
+    } else if (decorations.length == 1) {
+      return decorations.first;
+    } else {
+      return TextDecoration.combine(decorations);
+    }
   }
 
   Widget _buildStatusBar(bool isDark) {
@@ -832,6 +1110,7 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
         .where((word) => word.isNotEmpty)
         .length;
     final charCount = _contentController.text.length;
+    final selection = _contentController.selection;
 
     return Container(
       height: 32,
@@ -867,7 +1146,18 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
                         : const Color(0xFF6B7280),
                   ),
                 ),
+                const SizedBox(width: 16),
               ],
+            ),
+          if (selection.isValid && !selection.isCollapsed)
+            Text(
+              'Selected: ${selection.end - selection.start} chars',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF3B82F6),
+              ),
             ),
           const Spacer(),
           Text(
@@ -881,31 +1171,54 @@ class _WordStyleEditorState extends State<WordStyleEditor> {
       ),
     );
   }
+}
 
-  void _insertText(String text) {
-    final selection = _contentController.selection;
-    final currentText = _contentController.text;
-    final newText = currentText.replaceRange(
-      selection.start,
-      selection.end,
-      text,
-    );
+class TextSpanData {
+  final String text;
+  final bool isBold;
+  final bool isItalic;
+  final bool isUnderline;
+  final bool isStrikethrough;
+  final double fontSize;
+  final String fontFamily;
+  final Color color;
+  final Color backgroundColor;
 
-    _contentController.text = newText;
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + text.length,
-    );
-  }
+  const TextSpanData({
+    required this.text,
+    this.isBold = false,
+    this.isItalic = false,
+    this.isUnderline = false,
+    this.isStrikethrough = false,
+    this.fontSize = 16.0,
+    this.fontFamily = 'System Default',
+    this.color = Colors.black,
+    this.backgroundColor = Colors.transparent,
+  });
 
-  void _insertTable() {
-    final table = '''
-|   |   |   |
-|---|---|---|
-|   |   |   |
-|   |   |   |
-''';
-    _insertText(table);
-  }
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'isBold': isBold,
+    'isItalic': isItalic,
+    'isUnderline': isUnderline,
+    'isStrikethrough': isStrikethrough,
+    'fontSize': fontSize,
+    'fontFamily': fontFamily,
+    'color': color.value,
+    'backgroundColor': backgroundColor.value,
+  };
+
+  factory TextSpanData.fromJson(Map<String, dynamic> json) => TextSpanData(
+    text: json['text'],
+    isBold: json['isBold'] ?? false,
+    isItalic: json['isItalic'] ?? false,
+    isUnderline: json['isUnderline'] ?? false,
+    isStrikethrough: json['isStrikethrough'] ?? false,
+    fontSize: json['fontSize']?.toDouble() ?? 16.0,
+    fontFamily: json['fontFamily'] ?? 'System Default',
+    color: Color(json['color'] ?? Colors.black.value),
+    backgroundColor: Color(json['backgroundColor'] ?? Colors.transparent.value),
+  );
 }
 
 class RulerPainter extends CustomPainter {

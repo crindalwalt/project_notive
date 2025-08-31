@@ -4,14 +4,14 @@ import '../../providers/note_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../data/models/note.dart';
 
-class AdvancedRichTextEditor extends StatefulWidget {
-  const AdvancedRichTextEditor({super.key});
+class SimpleSelectionEditor extends StatefulWidget {
+  const SimpleSelectionEditor({super.key});
 
   @override
-  State<AdvancedRichTextEditor> createState() => _AdvancedRichTextEditorState();
+  State<SimpleSelectionEditor> createState() => _SimpleSelectionEditorState();
 }
 
-class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
+class _SimpleSelectionEditorState extends State<SimpleSelectionEditor> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late FocusNode _titleFocusNode;
@@ -19,7 +19,7 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
   Note? _currentNote;
   bool _isModified = false;
 
-  // Rich text formatting state
+  // Current formatting state
   bool _isBold = false;
   bool _isItalic = false;
   bool _isUnderline = false;
@@ -127,6 +127,62 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
       );
       _isModified = false;
     }
+  }
+
+  void _applyFormatting({
+    bool? bold,
+    bool? italic,
+    bool? underline,
+    bool? strikethrough,
+    double? fontSize,
+    String? fontFamily,
+    Color? textColor,
+    Color? backgroundColor,
+  }) {
+    final selection = _contentController.selection;
+
+    if (!selection.isValid) {
+      _showSnackBar('Please place cursor in text or select text to format');
+      return;
+    }
+
+    if (selection.isCollapsed) {
+      _showSnackBar('Please select text to apply formatting');
+      return;
+    }
+
+    // For this simplified version, just show the snackbar with selection info
+    final selectedText = _contentController.text.substring(
+      selection.start,
+      selection.end,
+    );
+    _showSnackBar(
+      'Selected "${selectedText}" - Formatting will be applied to selection in future updates',
+    );
+
+    // Update current formatting state for toolbar
+    setState(() {
+      if (bold != null) _isBold = bold;
+      if (italic != null) _isItalic = italic;
+      if (underline != null) _isUnderline = underline;
+      if (strikethrough != null) _isStrikethrough = strikethrough;
+      if (fontSize != null) _fontSize = fontSize;
+      if (fontFamily != null) _fontFamily = fontFamily;
+      if (textColor != null) _textColor = textColor;
+      if (backgroundColor != null) _backgroundColor = backgroundColor;
+    });
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF2196F3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   @override
@@ -328,240 +384,192 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
           ),
         ),
       ),
-      child: Column(
-        children: [
-          // First row: Font and basic formatting
-          Row(
-            children: [
-              // Font Family
-              Container(
-                width: 140,
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF404040)
-                        : const Color(0xFFD1D5DB),
-                  ),
-                  borderRadius: BorderRadius.circular(4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Font Family Dropdown
+            Container(
+              constraints: const BoxConstraints(minWidth: 120, maxWidth: 160),
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF404040)
+                      : const Color(0xFFD1D5DB),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _fontFamily,
-                    isExpanded: true,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                    items: _fontFamilies.map((font) {
-                      return DropdownMenuItem(
-                        value: font,
-                        child: Text(font, style: const TextStyle(fontSize: 12)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _fontFamily = value!;
-                      });
-                    },
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(4),
               ),
-              const SizedBox(width: 8),
-
-              // Font Size
-              Container(
-                width: 70,
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF404040)
-                        : const Color(0xFFD1D5DB),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _fontFamily,
+                  isExpanded: true,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<double>(
-                    value: _fontSize,
-                    isExpanded: true,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                    items: _fontSizes.map((size) {
-                      return DropdownMenuItem(
-                        value: size,
-                        child: Text(
-                          '${size.toInt()}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _fontSize = value!;
-                      });
-                    },
-                  ),
+                  items: _fontFamilies.map((font) {
+                    return DropdownMenuItem(
+                      value: font,
+                      child: Text(font, style: const TextStyle(fontSize: 12)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _fontFamily = value!;
+                    });
+                    _applyFormatting(fontFamily: value);
+                  },
                 ),
               ),
-              const SizedBox(width: 12),
+            ),
+            const SizedBox(width: 8),
 
-              // Bold, Italic, Underline
-              _buildToggleButton(
-                Icons.format_bold,
-                _isBold,
-                () => setState(() => _isBold = !_isBold),
-                'Bold',
-                isDark,
+            // Font Size Dropdown
+            Container(
+              width: 70,
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF404040)
+                      : const Color(0xFFD1D5DB),
+                ),
+                borderRadius: BorderRadius.circular(4),
               ),
-              _buildToggleButton(
-                Icons.format_italic,
-                _isItalic,
-                () => setState(() => _isItalic = !_isItalic),
-                'Italic',
-                isDark,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<double>(
+                  value: _fontSize,
+                  isExpanded: true,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                  items: _fontSizes.map((size) {
+                    return DropdownMenuItem(
+                      value: size,
+                      child: Text(
+                        '${size.toInt()}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _fontSize = value!;
+                    });
+                    _applyFormatting(fontSize: value);
+                  },
+                ),
               ),
-              _buildToggleButton(
-                Icons.format_underlined,
-                _isUnderline,
-                () => setState(() => _isUnderline = !_isUnderline),
-                'Underline',
-                isDark,
-              ),
-              _buildToggleButton(
-                Icons.format_strikethrough,
-                _isStrikethrough,
-                () => setState(() => _isStrikethrough = !_isStrikethrough),
-                'Strikethrough',
-                isDark,
-              ),
+            ),
+            const SizedBox(width: 12),
 
-              const SizedBox(width: 12),
-              Container(
-                width: 1,
-                height: 24,
-                color: isDark
-                    ? const Color(0xFF404040)
-                    : const Color(0xFFD1D5DB),
-              ),
-              const SizedBox(width: 12),
+            // Formatting Buttons
+            _buildToggleButton(
+              Icons.format_bold,
+              _isBold,
+              () {
+                _applyFormatting(bold: !_isBold);
+              },
+              'Bold',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_italic,
+              _isItalic,
+              () {
+                _applyFormatting(italic: !_isItalic);
+              },
+              'Italic',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_underlined,
+              _isUnderline,
+              () {
+                _applyFormatting(underline: !_isUnderline);
+              },
+              'Underline',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_strikethrough,
+              _isStrikethrough,
+              () {
+                _applyFormatting(strikethrough: !_isStrikethrough);
+              },
+              'Strikethrough',
+              isDark,
+            ),
 
-              // Text Colors
-              _buildColorButton(
-                Icons.format_color_text,
-                _textColor,
-                'Text Color',
-                isDark,
-                (color) => setState(() => _textColor = color),
-              ),
-              _buildColorButton(
-                Icons.format_color_fill,
-                _backgroundColor,
-                'Highlight Color',
-                isDark,
-                (color) => setState(() => _backgroundColor = color),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(width: 8),
+            Container(
+              width: 1,
+              height: 24,
+              color: isDark ? const Color(0xFF404040) : const Color(0xFFD1D5DB),
+            ),
+            const SizedBox(width: 8),
 
-          // Second row: Alignment and lists
-          Row(
-            children: [
-              // Alignment
-              _buildToggleButton(
-                Icons.format_align_left,
-                _textAlign == TextAlign.left,
-                () => setState(() => _textAlign = TextAlign.left),
-                'Align Left',
-                isDark,
-              ),
-              _buildToggleButton(
-                Icons.format_align_center,
-                _textAlign == TextAlign.center,
-                () => setState(() => _textAlign = TextAlign.center),
-                'Align Center',
-                isDark,
-              ),
-              _buildToggleButton(
-                Icons.format_align_right,
-                _textAlign == TextAlign.right,
-                () => setState(() => _textAlign = TextAlign.right),
-                'Align Right',
-                isDark,
-              ),
-              _buildToggleButton(
-                Icons.format_align_justify,
-                _textAlign == TextAlign.justify,
-                () => setState(() => _textAlign = TextAlign.justify),
-                'Justify',
-                isDark,
-              ),
+            // Alignment Buttons
+            _buildToggleButton(
+              Icons.format_align_left,
+              _textAlign == TextAlign.left,
+              () => setState(() => _textAlign = TextAlign.left),
+              'Align Left',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_align_center,
+              _textAlign == TextAlign.center,
+              () => setState(() => _textAlign = TextAlign.center),
+              'Align Center',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_align_right,
+              _textAlign == TextAlign.right,
+              () => setState(() => _textAlign = TextAlign.right),
+              'Align Right',
+              isDark,
+            ),
+            _buildToggleButton(
+              Icons.format_align_justify,
+              _textAlign == TextAlign.justify,
+              () => setState(() => _textAlign = TextAlign.justify),
+              'Justify',
+              isDark,
+            ),
 
-              const SizedBox(width: 12),
-              Container(
-                width: 1,
-                height: 24,
-                color: isDark
-                    ? const Color(0xFF404040)
-                    : const Color(0xFFD1D5DB),
-              ),
-              const SizedBox(width: 12),
+            const SizedBox(width: 8),
+            Container(
+              width: 1,
+              height: 24,
+              color: isDark ? const Color(0xFF404040) : const Color(0xFFD1D5DB),
+            ),
+            const SizedBox(width: 8),
 
-              // Lists and indentation
-              _buildActionButton(
-                Icons.format_list_bulleted,
-                'Bullet List',
-                isDark,
-                () {},
-              ),
-              _buildActionButton(
-                Icons.format_list_numbered,
-                'Numbered List',
-                isDark,
-                () {},
-              ),
-              _buildActionButton(
-                Icons.format_indent_decrease,
-                'Decrease Indent',
-                isDark,
-                () {},
-              ),
-              _buildActionButton(
-                Icons.format_indent_increase,
-                'Increase Indent',
-                isDark,
-                () {},
-              ),
-
-              const SizedBox(width: 12),
-              Container(
-                width: 1,
-                height: 24,
-                color: isDark
-                    ? const Color(0xFF404040)
-                    : const Color(0xFFD1D5DB),
-              ),
-              const SizedBox(width: 12),
-
-              // Insert elements
-              _buildActionButton(
-                Icons.table_chart,
-                'Insert Table',
-                isDark,
-                () {},
-              ),
-              _buildActionButton(Icons.image, 'Insert Image', isDark, () {}),
-              _buildActionButton(Icons.link, 'Insert Link', isDark, () {}),
-            ],
-          ),
-        ],
+            // Color Buttons
+            _buildColorButton(
+              Icons.format_color_text,
+              _textColor,
+              'Text Color',
+              isDark,
+              (color) => _applyFormatting(textColor: color),
+            ),
+            _buildColorButton(
+              Icons.format_color_fill,
+              _backgroundColor,
+              'Highlight Color',
+              isDark,
+              (color) => _applyFormatting(backgroundColor: color),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -587,31 +595,6 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
             foregroundColor: isActive
                 ? (isDark ? Colors.white : const Color(0xFF3B82F6))
                 : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280)),
-            minimumSize: const Size(32, 32),
-            padding: const EdgeInsets.all(4),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    IconData icon,
-    String tooltip,
-    bool isDark,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(right: 2),
-      child: Tooltip(
-        message: tooltip,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 18),
-          style: IconButton.styleFrom(
-            foregroundColor: isDark
-                ? const Color(0xFFCCCCCC)
-                : const Color(0xFF6B7280),
             minimumSize: const Size(32, 32),
             padding: const EdgeInsets.all(4),
           ),
@@ -647,9 +630,12 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
               Container(
                 height: 3,
                 width: 16,
-                color: currentColor == Colors.transparent
-                    ? (isDark ? Colors.white : Colors.black)
-                    : currentColor,
+                decoration: BoxDecoration(
+                  color: currentColor == Colors.transparent
+                      ? (isDark ? Colors.white : Colors.black)
+                      : currentColor,
+                  borderRadius: BorderRadius.circular(1),
+                ),
               ),
             ],
           ),
@@ -671,63 +657,73 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
       Colors.transparent,
       Colors.black,
       Colors.white,
-      Colors.red,
-      Colors.green,
-      Colors.blue,
-      Colors.yellow,
-      Colors.orange,
-      Colors.purple,
-      Colors.pink,
-      Colors.cyan,
-      Colors.indigo,
-      Colors.teal,
-      Colors.lime,
-      Colors.amber,
-      Colors.deepOrange,
+      Colors.red.shade600,
+      Colors.green.shade600,
+      Colors.blue.shade600,
+      Colors.yellow.shade600,
+      Colors.orange.shade600,
+      Colors.purple.shade600,
+      Colors.pink.shade600,
+      Colors.cyan.shade600,
+      Colors.indigo.shade600,
+      Colors.teal.shade600,
+      Colors.lime.shade600,
+      Colors.amber.shade600,
+      Colors.deepOrange.shade600,
     ];
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Select Color'),
-        content: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: colors.map((color) {
-            return GestureDetector(
-              onTap: () {
-                onColorChanged(color);
-                Navigator.pop(context);
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color == Colors.transparent
-                      ? (isDark
-                            ? const Color(0xFF2D2D30)
-                            : const Color(0xFFF3F4F6))
-                      : color,
-                  border: Border.all(
-                    color: color == currentColor
-                        ? (isDark ? Colors.white : Colors.black)
-                        : (isDark
-                              ? const Color(0xFF404040)
-                              : const Color(0xFFD1D5DB)),
-                    width: color == currentColor ? 2 : 1,
+        content: SizedBox(
+          width: 240,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: colors.map((color) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (onColorChanged.toString().contains('textColor')) {
+                      _textColor = color;
+                    } else {
+                      _backgroundColor = color;
+                    }
+                  });
+                  onColorChanged(color);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color == Colors.transparent
+                        ? (isDark
+                              ? const Color(0xFF2D2D30)
+                              : const Color(0xFFF3F4F6))
+                        : color,
+                    border: Border.all(
+                      color: color == currentColor
+                          ? (isDark ? Colors.white : Colors.black)
+                          : (isDark
+                                ? const Color(0xFF404040)
+                                : const Color(0xFFD1D5DB)),
+                      width: color == currentColor ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  borderRadius: BorderRadius.circular(4),
+                  child: color == Colors.transparent
+                      ? Icon(
+                          Icons.format_color_reset,
+                          size: 16,
+                          color: isDark ? Colors.white : Colors.black,
+                        )
+                      : null,
                 ),
-                child: color == Colors.transparent
-                    ? Icon(
-                        Icons.format_color_reset,
-                        size: 16,
-                        color: isDark ? Colors.white : Colors.black,
-                      )
-                    : null,
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
         actions: [
           TextButton(
@@ -753,10 +749,7 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
         ),
       ),
       child: Row(
-        children: [
-          // Ruler markings (simplified)
-          Expanded(child: CustomPaint(painter: RulerPainter(isDark))),
-        ],
+        children: [Expanded(child: CustomPaint(painter: RulerPainter(isDark)))],
       ),
     );
   }
@@ -770,7 +763,7 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: (isDark ? Colors.black : Colors.grey).withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -784,26 +777,19 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
         textAlignVertical: TextAlignVertical.top,
         style: TextStyle(
           fontSize: _fontSize,
-          fontFamily: _fontFamily == 'System Default' ? null : _fontFamily,
+          color: isDark ? Colors.white : Colors.black,
+          height: 1.6,
           fontWeight: _isBold ? FontWeight.bold : FontWeight.normal,
           fontStyle: _isItalic ? FontStyle.italic : FontStyle.normal,
-          decoration: TextDecoration.combine([
-            if (_isUnderline) TextDecoration.underline,
-            if (_isStrikethrough) TextDecoration.lineThrough,
-          ]),
-          color: _textColor == Colors.transparent
-              ? (isDark ? Colors.white : Colors.black)
-              : _textColor,
-          backgroundColor: _backgroundColor == Colors.transparent
-              ? null
-              : _backgroundColor,
-          height: 1.6,
+          decoration: _buildTextDecoration(),
+          fontFamily: _fontFamily == 'System Default' ? null : _fontFamily,
         ),
         textAlign: _textAlign,
         decoration: InputDecoration(
-          hintText: 'Start writing your note...',
+          hintText:
+              'Start writing your document...\n\nTip: Select text first, then apply formatting to see selection-based feedback.',
           hintStyle: TextStyle(
-            fontSize: _fontSize,
+            fontSize: 16,
             color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
           ),
           border: InputBorder.none,
@@ -813,7 +799,33 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
     );
   }
 
+  TextDecoration _buildTextDecoration() {
+    List<TextDecoration> decorations = [];
+
+    if (_isUnderline) {
+      decorations.add(TextDecoration.underline);
+    }
+    if (_isStrikethrough) {
+      decorations.add(TextDecoration.lineThrough);
+    }
+
+    if (decorations.isEmpty) {
+      return TextDecoration.none;
+    } else if (decorations.length == 1) {
+      return decorations.first;
+    } else {
+      return TextDecoration.combine(decorations);
+    }
+  }
+
   Widget _buildStatusBar(bool isDark) {
+    final wordCount = _contentController.text
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .length;
+    final charCount = _contentController.text.length;
+    final selection = _contentController.selection;
+
     return Container(
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -848,11 +860,22 @@ class _AdvancedRichTextEditorState extends State<AdvancedRichTextEditor> {
                         : const Color(0xFF6B7280),
                   ),
                 ),
+                const SizedBox(width: 16),
               ],
+            ),
+          if (selection.isValid && !selection.isCollapsed)
+            Text(
+              'Selected: ${selection.end - selection.start} chars',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF3B82F6),
+              ),
             ),
           const Spacer(),
           Text(
-            'Word Count: ${_contentController.text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length} | Characters: ${_contentController.text.length}',
+            'Words: $wordCount | Characters: $charCount',
             style: TextStyle(
               fontSize: 12,
               color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),

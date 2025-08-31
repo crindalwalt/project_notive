@@ -6,9 +6,9 @@ import '../providers/folder_provider.dart';
 import '../providers/note_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/common/collapsible_sidebar.dart';
+import '../widgets/common/simple_selection_editor.dart';
 import 'folders/folder_list.dart';
-import 'notes/note_list.dart';
-import 'notes/note_editor.dart';
+import 'notes/notes_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // Note Editor
-          const Expanded(child: NoteEditor()),
+          const Expanded(child: SimpleSelectionEditor()),
         ],
       ),
     );

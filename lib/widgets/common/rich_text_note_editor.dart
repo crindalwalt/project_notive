@@ -52,7 +52,7 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (note != null) {
           _titleController.text = note.title;
-          
+
           // Load QuillDocument from JSON or create empty document
           try {
             if (note.content.isNotEmpty) {
@@ -93,11 +93,15 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
   void _saveNote() {
     if (_currentNote != null && _isModified) {
       final noteProvider = context.read<NoteProvider>();
-      final contentJson = jsonEncode(_quillController.document.toDelta().toJson());
-      
+      final contentJson = jsonEncode(
+        _quillController.document.toDelta().toJson(),
+      );
+
       noteProvider.updateNote(
         _currentNote!.id,
-        title: _titleController.text.trim().isEmpty ? 'Untitled' : _titleController.text.trim(),
+        title: _titleController.text.trim().isEmpty
+            ? 'Untitled'
+            : _titleController.text.trim(),
         content: contentJson,
       );
       _isModified = false;
@@ -107,7 +111,7 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
-    
+
     return Consumer<NoteProvider>(
       builder: (context, noteProvider, child) {
         final note = noteProvider.selectedNote;
@@ -141,13 +145,17 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2D2D30) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF2D2D30)
+                    : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(60),
               ),
               child: Icon(
                 Icons.note_add,
                 size: 60,
-                color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                color: isDark
+                    ? const Color(0xFF6A6A6A)
+                    : const Color(0xFF9CA3AF),
               ),
             ),
             const SizedBox(height: 24),
@@ -156,7 +164,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF374151),
+                color: isDark
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xFF374151),
               ),
             ),
             const SizedBox(height: 8),
@@ -164,7 +174,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               'Select a note from the sidebar or create a new one to start editing',
               style: TextStyle(
                 fontSize: 16,
-                color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                color: isDark
+                    ? const Color(0xFF6A6A6A)
+                    : const Color(0xFF9CA3AF),
               ),
               textAlign: TextAlign.center,
             ),
@@ -225,7 +237,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
                 hintStyle: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF),
+                  color: isDark
+                      ? const Color(0xFF6A6A6A)
+                      : const Color(0xFF9CA3AF),
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
@@ -251,13 +265,17 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               }
             },
             icon: Icon(
-              _currentNote?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined,
+              _currentNote?.isPinned == true
+                  ? Icons.push_pin
+                  : Icons.push_pin_outlined,
               size: 20,
             ),
             style: IconButton.styleFrom(
-              foregroundColor: _currentNote?.isPinned == true 
+              foregroundColor: _currentNote?.isPinned == true
                   ? const Color(0xFFF59E0B)
-                  : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280)),
+                  : (isDark
+                        ? const Color(0xFFCCCCCC)
+                        : const Color(0xFF6B7280)),
             ),
             tooltip: _currentNote?.isPinned == true ? 'Unpin Note' : 'Pin Note',
           ),
@@ -265,7 +283,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
             onPressed: _saveNote,
             icon: const Icon(Icons.save, size: 20),
             style: IconButton.styleFrom(
-              foregroundColor: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF6B7280),
+              foregroundColor: isDark
+                  ? const Color(0xFFCCCCCC)
+                  : const Color(0xFF6B7280),
             ),
             tooltip: 'Save Note',
           ),
@@ -363,7 +383,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               TextStyle(
                 fontSize: 16,
                 height: 1.6,
-                color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+                color: isDark
+                    ? const Color(0xFFE5E7EB)
+                    : const Color(0xFF374151),
               ),
               const VerticalSpacing(8, 8),
               const VerticalSpacing(0, 0),
@@ -406,14 +428,18 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               TextStyle(
                 fontSize: 16,
                 fontStyle: FontStyle.italic,
-                color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280),
+                color: isDark
+                    ? const Color(0xFFD1D5DB)
+                    : const Color(0xFF6B7280),
               ),
               const VerticalSpacing(8, 8),
               const VerticalSpacing(0, 0),
               BoxDecoration(
                 border: Border(
                   left: BorderSide(
-                    color: isDark ? const Color(0xFF6B7280) : const Color(0xFFD1D5DB),
+                    color: isDark
+                        ? const Color(0xFF6B7280)
+                        : const Color(0xFFD1D5DB),
                     width: 4,
                   ),
                 ),
@@ -423,13 +449,19 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               TextStyle(
                 fontSize: 14,
                 fontFamily: 'monospace',
-                backgroundColor: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
-                color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF1F2937),
+                backgroundColor: isDark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFFD1D5DB)
+                    : const Color(0xFF1F2937),
               ),
               const VerticalSpacing(8, 8),
               const VerticalSpacing(0, 0),
               BoxDecoration(
-                color: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -437,7 +469,9 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
               TextStyle(
                 fontSize: 16,
                 height: 1.6,
-                color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+                color: isDark
+                    ? const Color(0xFFE5E7EB)
+                    : const Color(0xFF374151),
               ),
               const VerticalSpacing(8, 8),
               const VerticalSpacing(0, 0),
@@ -471,14 +505,18 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
                 Icon(
                   Icons.circle,
                   size: 8,
-                  color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF3B82F6),
+                  color: isDark
+                      ? const Color(0xFF3B82F6)
+                      : const Color(0xFF3B82F6),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Modified',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
                   ),
                 ),
               ],

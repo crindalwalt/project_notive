@@ -258,10 +258,17 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               Container(
                 width: 32,
                 height: 1,
-                color: isDark ? const Color(0xFF2D2D30) : const Color(0xFFE5E7EB),
+                color: isDark
+                    ? const Color(0xFF2D2D30)
+                    : const Color(0xFFE5E7EB),
               ),
               const SizedBox(height: 8),
-              ...noteProvider.notes.take(10).map((note) => _buildCollapsedNoteTile(note, noteProvider, isDark)),
+              ...noteProvider.notes
+                  .take(10)
+                  .map(
+                    (note) =>
+                        _buildCollapsedNoteTile(note, noteProvider, isDark),
+                  ),
             ],
           ),
         );
@@ -269,9 +276,13 @@ class _ElegantSidebarState extends State<ElegantSidebar>
     );
   }
 
-  Widget _buildCollapsedNoteTile(Note note, NoteProvider noteProvider, bool isDark) {
+  Widget _buildCollapsedNoteTile(
+    Note note,
+    NoteProvider noteProvider,
+    bool isDark,
+  ) {
     final isSelected = noteProvider.selectedNote?.id == note.id;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 1),
       child: Tooltip(
@@ -283,13 +294,15 @@ class _ElegantSidebarState extends State<ElegantSidebar>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isSelected 
+              color: isSelected
                   ? (isDark ? const Color(0xFF2D2D30) : const Color(0xFFE5F3FF))
                   : null,
               borderRadius: BorderRadius.circular(6),
-              border: isSelected 
+              border: isSelected
                   ? Border.all(
-                      color: isDark ? const Color(0xFF007ACC) : const Color(0xFF3B82F6),
+                      color: isDark
+                          ? const Color(0xFF007ACC)
+                          : const Color(0xFF3B82F6),
                       width: 1,
                     )
                   : null,
@@ -299,7 +312,9 @@ class _ElegantSidebarState extends State<ElegantSidebar>
               size: 16,
               color: isSelected
                   ? (isDark ? const Color(0xFF007ACC) : const Color(0xFF3B82F6))
-                  : (isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF)),
+                  : (isDark
+                        ? const Color(0xFF6A6A6A)
+                        : const Color(0xFF9CA3AF)),
             ),
           ),
         ),
