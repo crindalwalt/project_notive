@@ -4,7 +4,7 @@ import '../providers/theme_provider.dart';
 import '../providers/note_provider.dart';
 import '../providers/folder_provider.dart';
 import '../widgets/common/elegant_sidebar_new.dart';
-import '../widgets/common/elegant_note_editor.dart';
+import '../widgets/common/word_style_editor.dart';
 
 class ElegantHomeScreen extends StatefulWidget {
   const ElegantHomeScreen({super.key});
@@ -85,7 +85,7 @@ class _ElegantHomeScreenState extends State<ElegantHomeScreen>
         ),
 
         // Note Editor
-        const Expanded(child: ElegantNoteEditor()),
+        const Expanded(child: WordStyleEditor()),
       ],
     );
   }

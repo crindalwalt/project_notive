@@ -30,6 +30,9 @@ dependencies:
   
   # Icons
   cupertino_icons: ^1.0.8
+  
+  # Rich Text Editor
+  flutter_quill: ^11.4.2
 
 dev_dependencies:
   flutter_test:

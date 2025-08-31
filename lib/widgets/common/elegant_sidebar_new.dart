@@ -220,39 +220,90 @@ class _ElegantSidebarState extends State<ElegantSidebar>
   Widget _buildCollapsedView(bool isDark) {
     return Consumer<NoteProvider>(
       builder: (context, noteProvider, child) {
-        return Column(
-          children: [
-            const SizedBox(height: 8),
-            Tooltip(
-              message: 'Create Folder',
-              child: IconButton(
-                onPressed: () => _createNewFolder(),
-                icon: const Icon(Icons.folder, size: 20),
-                style: IconButton.styleFrom(
-                  foregroundColor: isDark
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF6B7280),
-                  minimumSize: const Size(36, 36),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Tooltip(
+                message: 'Create Folder',
+                child: IconButton(
+                  onPressed: () => _createNewFolder(),
+                  icon: const Icon(Icons.create_new_folder, size: 20),
+                  style: IconButton.styleFrom(
+                    foregroundColor: isDark
+                        ? const Color(0xFFCCCCCC)
+                        : const Color(0xFF6B7280),
+                    minimumSize: const Size(40, 40),
+                    padding: const EdgeInsets.all(8),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Tooltip(
-              message: 'Create Note',
-              child: IconButton(
-                onPressed: () => _createNewNote(),
-                icon: const Icon(Icons.note, size: 20),
-                style: IconButton.styleFrom(
-                  foregroundColor: isDark
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF6B7280),
-                  minimumSize: const Size(36, 36),
+              const SizedBox(height: 4),
+              Tooltip(
+                message: 'Create Note',
+                child: IconButton(
+                  onPressed: () => _createNewNote(),
+                  icon: const Icon(Icons.note_add, size: 20),
+                  style: IconButton.styleFrom(
+                    foregroundColor: isDark
+                        ? const Color(0xFFCCCCCC)
+                        : const Color(0xFF6B7280),
+                    minimumSize: const Size(40, 40),
+                    padding: const EdgeInsets.all(8),
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Container(
+                width: 32,
+                height: 1,
+                color: isDark ? const Color(0xFF2D2D30) : const Color(0xFFE5E7EB),
+              ),
+              const SizedBox(height: 8),
+              ...noteProvider.notes.take(10).map((note) => _buildCollapsedNoteTile(note, noteProvider, isDark)),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildCollapsedNoteTile(Note note, NoteProvider noteProvider, bool isDark) {
+    final isSelected = noteProvider.selectedNote?.id == note.id;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 1),
+      child: Tooltip(
+        message: note.title.isEmpty ? 'Untitled' : note.title,
+        child: InkWell(
+          onTap: () => noteProvider.selectNote(note),
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? (isDark ? const Color(0xFF2D2D30) : const Color(0xFFE5F3FF))
+                  : null,
+              borderRadius: BorderRadius.circular(6),
+              border: isSelected 
+                  ? Border.all(
+                      color: isDark ? const Color(0xFF007ACC) : const Color(0xFF3B82F6),
+                      width: 1,
+                    )
+                  : null,
+            ),
+            child: Icon(
+              Icons.description,
+              size: 16,
+              color: isSelected
+                  ? (isDark ? const Color(0xFF007ACC) : const Color(0xFF3B82F6))
+                  : (isDark ? const Color(0xFF6A6A6A) : const Color(0xFF9CA3AF)),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
